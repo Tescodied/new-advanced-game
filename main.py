@@ -19,7 +19,10 @@ def find_file_path(name):
     print(f"Full path : {os.path.abspath(name)}")
     quit()
 
-path = "C:\\Users\\User\\OneDrive\\Documents\\VS CODE PYTHON\\New game\\pics\\"
+
+fin_file_path("pause button.png")
+
+path = "" # paste in the output remember \\ for 1 \
 
 def make_image(file_name, width, height, additional_path=""):
     return pygame.transform.scale(pygame.image.load(f"{path}{additional_path}{file_name}").convert_alpha(), (width , height))
