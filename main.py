@@ -122,7 +122,7 @@ def levels_info(width, height):
 
 
 # GAME
-def draw_dots_map(level, level_cors):
+def draw_dots_map(level, level_cors, levels_map_bg, level_width, level_height):
     clock = pygame.time.Clock()
     running = True
 
@@ -132,7 +132,7 @@ def draw_dots_map(level, level_cors):
     while running:
         clock.tick(FPS)
 
-        for i, cors in enumerate(level_cors):
+        for i, cors1 in enumerate(level_cors):
             try:
                 cors2 = level_cors[i + 1]
             except IndexError:
@@ -201,7 +201,7 @@ def display_level(level, num_levels, level_width, level_height, levels_surfaces_
             time_wait -= 1
 
         if level > 1:
-            draw_dots_map(level, levelcors)
+            draw_dots_map(level, level_cors, levels_map_bg, level_width, level_height)
 
         for group, colour_index, (levelx, levely) in zip(levels_surfaces_sorted, changing_colours, levelcors):
             blit_cors = (levelx, levely)
