@@ -200,8 +200,8 @@ def display_level(level, num_levels, level_width, level_height, levels_surfaces_
         else:
             time_wait -= 1
 
-        if level > 1:
-            draw_dots_map(level, level_cors, levels_map_bg, level_width, level_height)
+        #if level > 1:
+        #    draw_dots_map(level, level_cors, levels_map_bg, level_width, level_height)
 
         for group, colour_index, (levelx, levely) in zip(levels_surfaces_sorted, changing_colours, levelcors):
             blit_cors = (levelx, levely)
