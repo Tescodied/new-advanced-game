@@ -50,6 +50,7 @@ curser_point_mask = pygame.mask.Mask((1, 1), fill = True)
 # COLOURS
 BLACK = (0,0,0)
 WHITE = (255, 255, 255)
+LIGHT_GREY = (200, 200, 200)
 TEXT_COL = (224, 180, 103)
 
 GREEN =         (0, 200, 100)
@@ -127,7 +128,8 @@ def draw_dots_map(level, level_cors, levels_map_bg, level_width, level_height):
     running = True
 
     num_dots_per_level = 3
-    dot_width, dot_height = 5, 5
+    dot_radius = 5
+    outline_dot_radius
 
     while running:
         clock.tick(FPS)
