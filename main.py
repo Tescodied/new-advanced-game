@@ -138,10 +138,24 @@ def draw_dots_map(level, level_cors):
             except IndexError:
                 continue
 
-            xdif, ydif = cors2[0] - cors[0], cors2[1] - cors[1]
-            xspacing = xdif / num_dots_per_level - dot_width
-            yspacing = ydif / num_dots_per_level - dot_height
-            print(xspacing, yspacing)
+            xdif, ydif = round(cors2[0] - cors1[0], 1), round(cors2[1] - cors1[1], 1)
+            ydif += level_height if ydif < 0 else -level_height
+
+            xspacing = round(xdif / (num_dots_per_level + 1), 1)
+            yspacing = round(ydif / (num_dots_per_level + 1), 1)
+
+            dot_cors = [
+                [
+                cors1[0] + level_width / 2 + (i + 1) * xspacing,
+                cors1[1] + (i + 1) * yspacing + (level_height if yspacing > 0 else 0)
+                ]
+            for i in range(num_dots_per_level)]
+
+            for cors in dot_cors:
+                pygame.draw.circle(win, BLACK, cors, outline_dot_radius)
+                pygame.draw.circle(win, LIGHT_GREY, cors, dot_radius)
+                
+        win.blit(curser, (pygame.mouse.get_pos()))
 
         pygame.display.flip()
 
