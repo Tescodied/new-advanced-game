@@ -128,8 +128,8 @@ def draw_dots_map(level, level_cors, levels_map_bg, level_width, level_height):
     running = True
 
     num_dots_per_level = 3
-    dot_radius = 5
-    outline_dot_radius
+    dot_radius = 3
+    outline_dot_radius = dot_radius + 2
 
     while running:
         clock.tick(FPS)
@@ -577,7 +577,7 @@ def main():
 
         bg1, bg2 = level_bgs.pop(), level_bgs.pop()
 
-        display_level(level, num_levels, level_width, level_height, levels_surfaces_sorted, levelcors)
+        #display_level(level, num_levels, level_width, level_height, levels_surfaces_sorted, levelcors)
         loading_screen(bg1, bg2)
 
 
