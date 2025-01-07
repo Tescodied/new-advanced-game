@@ -53,6 +53,7 @@ curser_point_mask = pygame.mask.Mask((1, 1), fill = True)
 # COLOURS
 BLACK = (0,0,0)
 WHITE = (255, 255, 255)
+LIGHT_GREY = (200, 200, 200)
 TEXT_COL = (224, 180, 103)
 
 GREEN =         (0, 200, 100)
@@ -144,7 +145,6 @@ def draw_dots_map(level, level_cors):
             xdif, ydif = cors2[0] - cors[0], cors2[1] - cors[1]
             xspacing = xdif / num_dots_per_level - dot_width
             yspacing = ydif / num_dots_per_level - dot_height
-            print(xspacing, yspacing)
 
         pygame.display.flip()
 
