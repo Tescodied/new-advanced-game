@@ -15,11 +15,15 @@ pygame.display.set_caption("New original game")
 
 
 # FILES
-def find_file_path(name):
-    print(f"Full path : {os.path.abspath(name)}")
-    quit()
+def find_file_path(name, need_quit=True):
+    path = os.path.abspath(name)  #make sure to cd the idle with a path
+    
+    if need_quit:
+        print(f"Full path : {path}")
+        quit()
+    return path
 
-path = "C:\\Users\\User\\OneDrive\\Documents\\VS CODE PYTHON\\New game\\pics\\"
+path = find_file_path("pics", need_quit=False)
 
 def make_image(file_name, width, height, additional_path=""):
     return pygame.transform.scale(pygame.image.load(f"{path}{additional_path}{file_name}").convert_alpha(), (width , height))
@@ -76,19 +80,21 @@ map_bg = make_image("map bg.png", W, H, "map\\")
 def levels_info(width, height):
 
     folder_path_levels = f"{path}map\\"
-    level_files = [f for f in os.listdir(folder_path_levels) if os.path.isfile(os.path.join(folder_path_levels, f)) and f != "map bg.png"]
-    level_files.sort(key=lambda x: int(re.match(r"(\d+)", x).group()))
+    files = [f for f in os.listdir(folder_path_levels) if os.path.isfile(os.path.join(folder_path_levels, f))]
 
-    num_colours = 3
+    text_files = [file for file in files if "text" in file]
+    text_files.sort(key=lambda x: int(re.match(r"(\d+)", x).group()))
+    level_name_order = tuple(name[4:-9].capitalize() for name in text_files)
+
+    level_files = [file for file in files if "level" in file]
+    txt_surfaces = [make_image(text, width, (height ) if " " in level_name_order[i] else height / 2, folder_path_levels[-4:]) for i, text in enumerate(text_files)]
+
     num_level_heights = 3
-    num_levels = len(level_files) // num_colours # 9
+    num_levels = len(level_name_order) # 9
+    num_colours = len(level_files)
 
-    surface_list = [make_image(name, width, height, "map\\") for name in level_files]
-
-    arrayed_levels_list = [
-    surface_list[i:i + num_colours]
-    for i in range(0, len(surface_list), num_colours)
-]
+    surface_list = [make_image(name, width, height, folder_path_levels[-4:]) for name in level_files]
+    levels_cols = [surface_list[0] for _ in range(num_levels)]
 
     map_blackness_padding = H / 3.9525
     ypadding =  H / 20
@@ -98,16 +104,13 @@ def levels_info(width, height):
     yspacing = (H - (ypadding * 2 + map_blackness_padding * 2 + height * num_level_heights)) / (num_level_heights - 1) #between each ship yes
     xspacing = (W - (end_x + start_x + width * num_levels)) / num_levels - 1
 
-    cors = []
-    
-    for index in range(num_levels):
-        multiplier = index % 4 if index % 2 != 1 else 1
-
-        cors.append([
-           round(start_x + (width * index + xspacing * index), 1), 
-            round(bottom_levely - (height * multiplier + yspacing * multiplier), 1)])
-    
-    level_name_order = tuple(dict.fromkeys(" ".join(name.split(" ")[2:-1]).capitalize() for name in level_files)) # learn from keys
+    cors = [
+        [
+        round(start_x + (width * index + xspacing * index), 1), 
+        round(bottom_levely - (height * (index % 4 if index % 2 != 1 else 1) + yspacing * (index % 4 if index % 2 != 1 else 1)), 1)
+        ]
+    for index in range(num_levels)
+    ]
     
     level_bgs = []
     for count, bg in enumerate(level_name_order[:-1]):
@@ -119,11 +122,11 @@ def levels_info(width, height):
     
     level_bgs = level_bgs[::-1]
 
-    return cors, arrayed_levels_list, level_name_order, num_levels, level_bgs
+    return cors, levels_cols, level_name_order, num_levels, level_bgs, num_colours, surface_list, txt_surfaces, map_blackness_padding
 
 
 # GAME
-def draw_dots_map(level, level_cors, levels_map_bg, level_width, level_height):
+def draw_dots_map(level, level_cors, levels_map_bg, level_width, level_height, level_3cols):
     clock = pygame.time.Clock()
     running = True
 
@@ -134,12 +137,21 @@ def draw_dots_map(level, level_cors, levels_map_bg, level_width, level_height):
     while running:
         clock.tick(FPS)
 
-        for i, cors1 in enumerate(level_cors):
-            try:
-                cors2 = level_cors[i + 1]
-            except IndexError:
-                continue
+        win.fill(BLACK)
+        win.blit(levels_map_bg, (0,0))
 
+        for surface, cors in zip(level_3cols, level_cors):
+            win.blit(surface, cors)
+
+        for i, cors1 in enumerate(level_cors):
+            if i + 1 == level:
+                break
+
+            try: 
+                cors2 = level_cors[i + 1] 
+            except IndexError: 
+                continue
+            
             xdif, ydif = round(cors2[0] - cors1[0], 1), round(cors2[1] - cors1[1], 1)
             ydif += level_height if ydif < 0 else -level_height
 
@@ -167,19 +179,22 @@ def draw_dots_map(level, level_cors, levels_map_bg, level_width, level_height):
                 quit()
 
 
-
-def display_level(level, num_levels, level_width, level_height, levels_surfaces_sorted, levelcors):
+def display_level(level, num_levels, level_width, level_height, level_3cols, levelcors, num_colours, colours_levels, original_cols, txt_surfaces, blackness):
     clock = pygame.time.Clock()
     running = True
     time_wait = 2 * FPS
 
-    changing_colours = [0 for _ in range(num_levels)]
-
     red_levelx = 0
     red_levely = 0
 
-    red_level_surface = levels_surfaces_sorted[level - 1][2]
+    red_location = level - 1
+    colours_levels[red_location] = level_3cols[2]
+    red_level_surface = colours_levels[red_location]
+
     red_level_mask = pygame.mask.from_surface(red_level_surface)
+
+    level_font = pygame.font.Font(cool_font_name, 100)
+    level_text = level_font.render(f"Level {level}", True, TEXT_COL)
 
     while running:
         clock.tick(FPS)
@@ -187,40 +202,38 @@ def display_level(level, num_levels, level_width, level_height, levels_surfaces_
 
         win.fill(BLACK)
         win.blit(map_bg, (0,0))
+        win.blit(level_text, (W / 2 - level_text.get_width() / 2, blackness / 2 - level_text.get_height() / 2))
+
+        red_level_colliding = curser_point_mask.overlap(red_level_mask, (red_levelx - mousex, red_levely - mousey))    
 
         if time_wait <= 0:
+            for i, ((levelx, levely), txt) in enumerate(zip(levelcors, txt_surfaces)):
+                blit_cors = (levelx, levely)
 
-            for i in range(level):
-                changing_colours[level - 1] = 2
-                if level >= i + 2:
-                    changing_colours[i] = 1
+                if i == red_location:
 
-            red_level_colliding = curser_point_mask.overlap(red_level_mask, (red_levelx -mousex, red_levely - mousey))
+                    scale_multiplier = 1
+                    if red_level_colliding:
+                        scale_multiplier = 1.1
+
+                    colours_levels[level - 1] = pygame.transform.scale(red_level_surface, (level_width * scale_multiplier, level_height * scale_multiplier))
+                    red_levelx, red_levely = levelx - (level_width * scale_multiplier - level_width) / 2, levely - (level_height * scale_multiplier - level_height) / 2
+
+                    blit_cors = (red_levelx, red_levely)
+                
+                win.blit(colours_levels[i], blit_cors)
+                win.blit(txt, (levelx, levely + level_height))
+                
 
             if pygame.mouse.get_pressed()[0] and red_level_colliding: #if left click and hovering level
                 running = False
         else:
             time_wait -= 1
+            for i, cors in enumerate(levelcors):
+                win.blit(original_cols[i], cors)
 
         #if level > 1:
-        #    draw_dots_map(level, level_cors, levels_map_bg, level_width, level_height)
-
-        for group, colour_index, (levelx, levely) in zip(levels_surfaces_sorted, changing_colours, levelcors):
-            blit_cors = (levelx, levely)
-
-            if colour_index == 2:
-
-                scale_multiplier = 1
-                if red_level_colliding:
-                    scale_multiplier = 1.1
-
-                levels_surfaces_sorted[level - 1][2] = pygame.transform.scale(red_level_surface, (level_width * scale_multiplier, level_height * scale_multiplier))
-                red_levelx, red_levely = levelx - (level_width * scale_multiplier - level_width) / 2, levely - (level_height * scale_multiplier - level_height) / 2
-
-                blit_cors = (red_levelx, red_levely)
-            
-            win.blit(group[colour_index], blit_cors)
-
+        #    draw_dots_map(level, levelcors, map_bg, level_width, level_height, original_cols)
 
         win.blit(curser, (mousex, mousey))
 
@@ -559,13 +572,13 @@ def game_finished(main_bg):
 
 
 def main():
-    level = 2
+    level = 1
     main_game = True
     num_bullets = 100
     
-    level_width, level_height = 110, 80
-    levelcors, levels_surfaces_sorted, names_list, num_levels, level_bgs = levels_info(level_width, level_height)
-
+    level_width, level_height = 120, 50
+    levelcors, colours_levels, names_list, num_levels, level_bgs, num_cols, level_3cols, txt_surfaces, map_blackness_padding = levels_info(level_width, level_height)
+    original_cols = colours_levels
     main_bg = start()
 
     while main_game:
@@ -577,7 +590,7 @@ def main():
 
         bg1, bg2 = level_bgs.pop(), level_bgs.pop()
 
-        #display_level(level, num_levels, level_width, level_height, levels_surfaces_sorted, levelcors)
+        display_level(level, num_levels, level_width, level_height, level_3cols, levelcors, num_cols, colours_levels, original_cols, txt_surfaces, map_blackness_padding)
         loading_screen(bg1, bg2)
 
 
@@ -741,6 +754,7 @@ def main():
                         num_bullets += win_compensation
                         level_completed_screen(bg1, win_compensation)
 
+                        colours_levels[level - 1] = level_3cols[1]
                         level += 1
                         running = False
                         break
@@ -786,8 +800,8 @@ def main():
                 no_ammo = False
 
             win.blit(player, (player_xcor, player_ycor))
-            win.blit(num_bullets_text, (50 , H - 50 - num_bullets_text.get_height()))
-            win.blit(zombies_killed_text, (W - 50 - zombies_killed_text.get_width() , H - 50 - num_bullets_text.get_height()))
+            win.blit(num_bullets_text, (50 , H - 60 - num_bullets_text.get_height()))
+            win.blit(zombies_killed_text, (W - 50 - zombies_killed_text.get_width() , H - 60 - zombies_killed_text.get_height()))
             win.blit(pause_button, (pause_buttonx, pause_buttony))
             win.blit(curser, (mousex, mousey))
 
@@ -800,9 +814,9 @@ def main():
 
             keys_pressed = pygame.key.get_pressed()
 
-            if (keys_pressed[pygame.K_UP] or keys_pressed[pygame.K_w] or keys_pressed[pygame.K_a]) and player_ycor > top_road - player_height:
+            if (keys_pressed[pygame.K_UP] or keys_pressed[pygame.K_w] or keys_pressed[pygame.K_a] or keys_pressed[pygame.K_LEFT]) and player_ycor > top_road - player_height:
                 player_ycor -= player_speed
-            if (keys_pressed[pygame.K_DOWN] or keys_pressed[pygame.K_s] or keys_pressed[pygame.K_d]) and player_ycor < bot_road - player_height:
+            if (keys_pressed[pygame.K_DOWN] or keys_pressed[pygame.K_s] or keys_pressed[pygame.K_d]or keys_pressed[pygame.K_RIGHT]) and player_ycor < bot_road - player_height:
                 player_ycor += player_speed
             if (keys_pressed[pygame.K_SPACE] or mouse_pressed[2]) and num_bullets > 0 and not activate_cooldown and not shoot:
                 num_bullets -= 1
@@ -833,7 +847,7 @@ if __name__ == "__main__":
 . DONE  levels aligned how i wanted
 .       dots animation when walking to new level
 .       fix bullet ammo gain when kill if still on screen it resests or gives none hypothesis
-.       arrangement of level num bullets etc
+. DONE  arrangement of level num bullets etc
 .       fix if w h change i.e. insead of width = 100, width = W / 10
 .       fix button on win game and level complete
 .       more efficient e.g. function in fonts
