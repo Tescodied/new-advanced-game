@@ -16,14 +16,14 @@ pygame.display.set_caption("New original game")
 
 # FILES
 def find_file_path(name, need_quit=True):
-    path = os.path.abspath(name)  #make sure to cd the idle with a path
-    
     if need_quit:
-        print(f"Full path : {path}")
+        print(f"Full path : {os.path.abspath(name)}\\")
         quit()
-    return path + "\\"
 
-path = find_file_path("pics", need_quit=False)
+    return os.path.abspath(name) + "\\"
+
+#path = find_file_path("pics", False)
+path = "C:\\Users\\User\\OneDrive\\Documents\\VS CODE PYTHON\\New game\\pics\\"
 
 def make_image(file_name, width, height, additional_path=""):
     return pygame.transform.scale(pygame.image.load(f"{path}{additional_path}{file_name}").convert_alpha(), (width , height))
@@ -91,7 +91,6 @@ def levels_info(width, height):
 
     num_level_heights = 3
     num_levels = len(level_name_order) # 9
-    num_colours = len(level_files)
 
     surface_list = [make_image(name, width, height, folder_path_levels[-4:]) for name in level_files]
     levels_cols = [surface_list[0] for _ in range(num_levels)]
@@ -122,67 +121,18 @@ def levels_info(width, height):
     
     level_bgs = level_bgs[::-1]
 
-    return cors, levels_cols, level_name_order, num_levels, level_bgs, num_colours, surface_list, txt_surfaces, map_blackness_padding
+    return cors, levels_cols, level_name_order, level_bgs, surface_list, txt_surfaces, map_blackness_padding
 
 
 # GAME
-def draw_dots_map(level, level_cors, levels_map_bg, level_width, level_height, level_3cols):
+def display_level(level, level_width, level_height, level_3cols, levelcors, colours_levels, original_cols, txt_surfaces, blackness):
     clock = pygame.time.Clock()
     running = True
+    time_wait = 2 * FPS
 
     num_dots_per_level = 3
     dot_radius = 3
     outline_dot_radius = dot_radius + 2
-
-    while running:
-        clock.tick(FPS)
-
-        win.fill(BLACK)
-        win.blit(levels_map_bg, (0,0))
-
-        for surface, cors in zip(level_3cols, level_cors):
-            win.blit(surface, cors)
-
-        for i, cors1 in enumerate(level_cors):
-            if i + 1 == level:
-                break
-
-            try: 
-                cors2 = level_cors[i + 1] 
-            except IndexError: 
-                continue
-            
-            xdif, ydif = round(cors2[0] - cors1[0], 1), round(cors2[1] - cors1[1], 1)
-            ydif += level_height if ydif < 0 else -level_height
-
-            xspacing = round(xdif / (num_dots_per_level + 1), 1)
-            yspacing = round(ydif / (num_dots_per_level + 1), 1)
-
-            dot_cors = [
-                [
-                cors1[0] + level_width / 2 + (i + 1) * xspacing,
-                cors1[1] + (i + 1) * yspacing + (level_height if yspacing > 0 else 0)
-                ]
-            for i in range(num_dots_per_level)]
-
-            for cors in dot_cors:
-                pygame.draw.circle(win, BLACK, cors, outline_dot_radius)
-                pygame.draw.circle(win, LIGHT_GREY, cors, dot_radius)
-                
-        win.blit(curser, (pygame.mouse.get_pos()))
-
-        pygame.display.flip()
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-                quit()
-
-
-def display_level(level, num_levels, level_width, level_height, level_3cols, levelcors, num_colours, colours_levels, original_cols, txt_surfaces, blackness):
-    clock = pygame.time.Clock()
-    running = True
-    time_wait = 2 * FPS
 
     red_levelx = 0
     red_levely = 0
@@ -231,6 +181,34 @@ def display_level(level, num_levels, level_width, level_height, level_3cols, lev
             time_wait -= 1
             for i, cors in enumerate(levelcors):
                 win.blit(original_cols[i], cors)
+
+
+        for i, cors1 in enumerate(levelcors):
+            if i + 1 == level:
+                break
+
+            try: 
+                cors2 = levelcors[i + 1] 
+            except IndexError: 
+                continue
+            
+            xdif, ydif = round(cors2[0] - cors1[0], 1), round(cors2[1] - cors1[1], 1)
+            ydif += level_height if ydif < 0 else -level_height
+
+            xspacing = round(xdif / (num_dots_per_level + 1), 1)
+            yspacing = round(ydif / (num_dots_per_level + 1), 1)
+
+            dot_cors = [
+                [
+                cors1[0] + level_width / 2 + (i + 1) * xspacing,
+                cors1[1] + (i + 1) * yspacing + (level_height if yspacing > 0 else 0)
+                ]
+            for i in range(num_dots_per_level)]
+
+            for cors in dot_cors:
+                pygame.draw.circle(win, BLACK, cors, outline_dot_radius)
+                pygame.draw.circle(win, LIGHT_GREY, cors, dot_radius)
+
 
         #if level > 1:
         #    draw_dots_map(level, levelcors, map_bg, level_width, level_height, original_cols)
@@ -577,7 +555,7 @@ def main():
     num_bullets = 100
     
     level_width, level_height = 120, 50
-    levelcors, colours_levels, names_list, num_levels, level_bgs, num_cols, level_3cols, txt_surfaces, map_blackness_padding = levels_info(level_width, level_height)
+    levelcors, colours_levels, names_list, level_bgs, level_3cols, txt_surfaces, map_blackness_padding = levels_info(level_width, level_height)
     original_cols = colours_levels
     main_bg = start()
 
@@ -590,7 +568,7 @@ def main():
 
         bg1, bg2 = level_bgs.pop(), level_bgs.pop()
 
-        display_level(level, num_levels, level_width, level_height, level_3cols, levelcors, num_cols, colours_levels, original_cols, txt_surfaces, map_blackness_padding)
+        display_level(level, level_width, level_height, level_3cols, levelcors, colours_levels, original_cols, txt_surfaces, map_blackness_padding)
         loading_screen(bg1, bg2)
 
 
@@ -850,7 +828,10 @@ if __name__ == "__main__":
 . DONE  arrangement of level num bullets etc
 .       fix if w h change i.e. insead of width = 100, width = W / 10
 .       fix button on win game and level complete
-.       more efficient e.g. function in fonts
 .       rules button for how to play
+.       if user holds right arrow it speeds up (bg scroll)
+
+
+.       more efficient e.g. function in fonts
 
 """
