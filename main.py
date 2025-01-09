@@ -21,7 +21,7 @@ def find_file_path(name, need_quit=True):
     if need_quit:
         print(f"Full path : {path}")
         quit()
-    return path
+    return path + "\\"
 
 path = find_file_path("pics", need_quit=False)
 
